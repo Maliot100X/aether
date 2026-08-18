@@ -1,0 +1,131 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-void: #07060c;
+  --color-surface: #12101a;
+  --color-elevated: #1c1926;
+  --color-fg: #f2ead8;
+  --color-muted: #8d8796;
+  --color-aether: #7ee8ff;
+  --color-gold: #e4c77b;
+  --color-border: #2c2838;
+  --color-rose: #e08a8a;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --radius-holo: 1.25rem;
+}
+
+@layer base {
+  html,
+  body,
+  #app {
+    min-height: 100%;
+    background: var(--color-void);
+    color: var(--color-fg);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    overflow: auto;
+    font-family: var(--font-sans);
+  }
+
+  body.realm-lock,
+  body.realm-lock #app {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: 0.02em;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-aether) 35%, transparent);
+    color: var(--color-fg);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.holo-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-holo);
+  border: 1px solid color-mix(in oklab, var(--color-fg) 12%, var(--color-border));
+  background: color-mix(in oklab, var(--color-void) 78%, transparent);
+  box-shadow:
+    0 24px 80px color-mix(in oklab, var(--color-void) 70%, transparent),
+    inset 0 1px 0 color-mix(in oklab, var(--color-fg) 8%, transparent);
+  backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.holo-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: calc(var(--radius-holo) - 1px);
+  background: color-mix(in oklab, var(--color-surface) 82%, transparent);
+}
+
+.tab-rail {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-void) 70%, transparent);
+}
+
+.tab-rail button {
+  flex: 1 0 auto;
+  min-height: 44px;
+  border-radius: 999px;
+  padding: 0 16px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+  transition:
+    color 160ms ease,
+    background 160ms ease;
+}
+
+.tab-rail button[data-on="true"] {
+  background: var(--color-fg);
+  color: var(--color-void);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-panel,
+  .tab-rail button {
+    transition: none;
+  }
+}

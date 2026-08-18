@@ -1,0 +1,22 @@
+import { chromium } from "playwright";
+const browser = await chromium.launch({ args: ["--no-sandbox"] });
+const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+const errors = [];
+page.on("pageerror", (e) => errors.push("page:" + e.message));
+page.on("console", (m) => {
+  if (m.type() === "error") errors.push("console:" + m.text());
+});
+await page.goto("http://127.0.0.1:8080/", { waitUntil: "networkidle", timeout: 60000 });
+await page.waitForTimeout(2000);
+await page.getByRole("button", { name: /enter the realm/i }).click();
+await page.waitForTimeout(2500);
+await page.screenshot({ path: "/workspace/screenshots/aether-world.png", fullPage: false });
+await page.getByRole("button", { name: /1 The Nexus|Nexus/i }).first().click();
+await page.waitForTimeout(1800);
+await page.screenshot({ path: "/workspace/screenshots/aether-nexus.png", fullPage: false });
+const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
+await mobile.goto("http://127.0.0.1:8080/", { waitUntil: "networkidle", timeout: 60000 });
+await mobile.waitForTimeout(1500);
+await mobile.screenshot({ path: "/workspace/screenshots/aether-mobile.png" });
+console.log(JSON.stringify({ errors, title: await page.title(), body: (await page.locator("body").innerText()).slice(0, 400) }, null, 2));
+await browser.close();
