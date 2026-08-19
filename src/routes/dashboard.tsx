@@ -1,6 +1,5 @@
 import { Desk, signOutToLogin } from "@/components/desk/Desk";
 import { authClient, getBearerToken } from "@/lib/auth/client";
-import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -26,11 +25,21 @@ function Dashboard() {
   if (isPending || grace) {
     return (
       <main className="grid min-h-dvh place-items-center bg-void text-muted">
-        <p className="text-sm tracking-[0.3em] uppercase">Opening your desk…</p>
+        <p className="text-sm tracking-[0.3em] uppercase">Opening your desk\u2026</p>
       </main>
     );
   }
-  if (!user) return <RedirectToSignIn />;
+
+  // Guest mode: show desk without auth when auth isn't configured
+  if (!user) {
+    return (
+      <Desk
+        title="Guest"
+        email={null}
+        onSignOut={undefined}
+      />
+    );
+  }
 
   return (
     <Desk

@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db";
+import { verifyToken } from "@/lib/auth/jwt-auth";
 import { hashToken } from "@/lib/crypto";
 import { auth } from "@/lib/auth/server";
 
@@ -14,6 +15,15 @@ export async function resolveOwner(request: Request): Promise<Owner | null> {
     ? header.slice(7).trim()
     : "";
 
+  // JWT token auth (no database needed)
+  if (bearer.split(".").length === 3) {
+    const jwtUser = verifyToken(bearer);
+    if (jwtUser) {
+      return { ownerId: jwtUser.id, profileId: null, kind: "token" as const };
+    }
+  }
+
+  // Custom API token auth (needs database)
   if (bearer.startsWith("ath_")) {
     const sql = await getSql();
     const rows = await sql<{ profile_id: string; user_id: string | null }>`

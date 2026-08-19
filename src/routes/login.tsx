@@ -25,6 +25,33 @@ function Login() {
   }
   if (user) return <Navigate to="/dashboard" />;
 
+  async function quickAccess() {
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await fetch("/api/register/human", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim() || "Wanderer",
+          email: email.trim() || `wanderer-${Date.now()}@aether.local`,
+        }),
+      });
+      const data = await res.json();
+      if (data.authToken || data.token) {
+        const t = data.authToken || data.token;
+        // Store token so auth client picks it up
+        try { sessionStorage.setItem("grok-auth.bearer-token", t); } catch {}
+        window.location.assign("/dashboard");
+      } else {
+        throw new Error(data.error ?? "Quick access failed");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Quick access failed");
+      setBusy(false);
+    }
+  }
+
   async function emailAuth(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -38,9 +65,29 @@ function Login() {
         });
         if (created.error) throw new Error(created.error.message ?? "Could not create account");
       }
-      const signed = await authClient.signIn.email({ email: email.trim(), password });
-      if (signed.error) throw new Error(signed.error.message ?? "Email sign-in failed");
-      window.location.assign("/dashboard");
+      // Try Better Auth first, fall back to JWT
+      try {
+        const signed = await authClient.signIn.email({ email: email.trim(), password });
+        if (!signed.error) {
+          window.location.assign("/dashboard");
+          return;
+        }
+      } catch {
+        // Better Auth failed (no DB on Vercel), use JWT fallback
+      }
+      // JWT fallback: sign-up + store token
+      const signUpRes = await fetch("/api/auth/sign-up/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim() || email.split("@")[0] || "Wanderer", email: email.trim(), password }),
+      });
+      const signUpData = await signUpRes.json();
+      if (signUpData.token) {
+        try { sessionStorage.setItem("grok-auth.bearer-token", signUpData.token); } catch {}
+        window.location.assign("/dashboard");
+        return;
+      }
+      throw new Error(signUpData.error?.message ?? signUpData.message ?? "Sign-in failed");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Email sign-in failed");
       setBusy(false);
@@ -59,6 +106,17 @@ function Login() {
               Google or X. After you return, you land on your dashboard — not this page.
             </p>
           </div>
+
+          <button
+            type="button"
+            onClick={() => void quickAccess()}
+            disabled={busy}
+            className="w-full rounded-full bg-aether px-7 py-3 text-sm font-medium text-void disabled:opacity-50"
+          >
+            {busy ? "Opening…" : "⚡ Quick Access — No Account Needed"}
+          </button>
+
+          <div className="text-center text-[11px] text-muted">or sign in below</div>
 
           <AuthButtons callbackURL="/login" />
 
