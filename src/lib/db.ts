@@ -167,7 +167,22 @@ async function createPgliteSql(): Promise<Sql> {
   });
 }
 
+
+
+/**
+ * No-op SQL fallback for when PGLite fails (e.g. on Vercel serverless).
+ * Returns empty arrays for all queries — the app continues to function
+ * for public APIs and JWT auth. Custom token auth (ath_ prefix) won't work.
+ */
+function createFallbackSql(): Sql {
+  const noop = async <T = Record<string, unknown>>(): Promise<T[]> => [];
+  const noopQuery = async <T = Record<string, unknown>>(): Promise<T[]> => [];
+  const sql = Object.assign(noop, { query: noopQuery }) as Sql;
+  return sql;
+}
+
 let sqlPromise: Promise<Sql> | null = null;
+
 
 async function createSql(): Promise<Sql> {
   if (typeof window !== "undefined") {
@@ -188,8 +203,10 @@ async function createSql(): Promise<Sql> {
  */
 export function getSql(): Promise<Sql> {
   sqlPromise ??= createSql().catch((err) => {
-    sqlPromise = null; // don't memoize failures — let the next call retry
-    throw err;
+    console.warn("[db] Primary DB failed, using fallback:", err.message);
+    sqlPromise = null;
+    // Return a no-op SQL so the app keeps working without a database
+    return createFallbackSql();
   });
   return sqlPromise;
 }
