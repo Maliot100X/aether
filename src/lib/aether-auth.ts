@@ -1,7 +1,9 @@
-import { getSql } from "@/lib/db";
+// Lazy: import getSql on demand to avoid PGLite crash on Vercel
 import { verifyToken } from "@/lib/auth/jwt-auth";
 import { hashToken } from "@/lib/crypto";
-import { auth } from "@/lib/auth/server";
+// Lazy import: auth server crashes on Vercel when PGLite fails
+// let auth: typeof import("@/lib/auth/server").auth;
+// Loaded on demand below to avoid top-level crash.
 
 export type Owner = {
   ownerId: string;
@@ -23,8 +25,9 @@ export async function resolveOwner(request: Request): Promise<Owner | null> {
     }
   }
 
-  // Custom API token auth (needs database)
+  // Custom API token auth (needs database — lazy import)
   if (bearer.startsWith("ath_")) {
+    const { getSql } = await import("@/lib/db");
     const sql = await getSql();
     const rows = await sql<{ profile_id: string; user_id: string | null }>`
       select profile_id, user_id from aether_tokens where token_hash = ${hashToken(bearer)}
@@ -40,6 +43,7 @@ export async function resolveOwner(request: Request): Promise<Owner | null> {
   }
 
   try {
+    const { auth } = await import("@/lib/auth/server");
     const headers = new Headers(request.headers);
     if (bearer && !headers.get("authorization")) {
       headers.set("Authorization", `Bearer ${bearer}`);
@@ -49,7 +53,7 @@ export async function resolveOwner(request: Request): Promise<Owner | null> {
       return { ownerId: session.user.id, profileId: null, kind: "session" };
     }
   } catch {
-    /* no session */
+    /* no session — Better Auth not available (e.g. PGLite fails on Vercel) */
   }
 
   return null;
