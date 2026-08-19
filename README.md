@@ -50,3 +50,4 @@ npm run typecheck
 ## AnsemHack
 
 Register a team in the Arena. Prize rail: $250K $ANSEM. Official desk: [clawpump.tech/ansemhack](https://clawpump.tech/ansemhack).
+
